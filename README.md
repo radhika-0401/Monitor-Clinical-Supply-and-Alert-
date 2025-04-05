@@ -13,6 +13,8 @@ Software: Python (Flask, Serial), HTML, CSS, JavaScript (Charts.js)
 
 Dashboard preview
 
+<img width="959" alt="Image" src="https://github.com/user-attachments/assets/e4501940-d2f3-4680-8827-dd9340c7e5f5" />
+
 
 
 
