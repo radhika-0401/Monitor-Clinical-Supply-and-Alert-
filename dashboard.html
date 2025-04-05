@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor Dashboard</title>
+    <title>Real-Time Sensor Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
     <style>
@@ -24,8 +24,7 @@
             width: 400px;
             margin: 40px;
         }
-		
-		 .canvas {
+        .canvas {
             background-color: #111;
             border-radius: 10px;
             padding: 10px;
@@ -44,28 +43,20 @@
             <p>Flame Sensor</p>
         </div>
     </div>
-	
-	
-	    <div class="container">
+
+    <div class="container">
         <div>
-            <h3>Oxygen Level (%)</h3>
-            <canvas id="oxygenChart" width="600" height="200"></canvas>
+            <h3>Distance (cm)</h3>
+            <canvas id="distanceChart" width="600" height="200"></canvas>
         </div>
         <div>
-            <h3>Accelerometer (X, Y, Z)</h3>
-            <canvas id="accelChart" width="600" height="200"></canvas>
+            <h3>Humidity (%)</h3>
+            <canvas id="humidityChart" width="600" height="200"></canvas>
         </div>
     </div>
-	
-	
-	
-	
-	
-    <script>
-	
-	    var oxygenChartCtx = document.getElementById("oxygenChart").getContext("2d");
-        var accelChartCtx = document.getElementById("accelChart").getContext("2d");
 
+    <script>
+        // Gauge Initialization
         function createGauge(canvasId, min, max) {
             let gauge = new Gauge(document.getElementById(canvasId)).setOptions({
                 angle: 0.15,
@@ -84,36 +75,58 @@
             return gauge;
         }
 
-        let tempGauge = createGauge("tempGauge", 20, 40);
+        let tempGauge = createGauge("tempGauge", 20, 50);
         let flameGauge = createGauge("flameGauge", 0, 1);
-		
-		
-		oxygenChart = new Chart(oxygenChartCtx, {
+
+        // Chart Initialization
+        var distanceChartCtx = document.getElementById("distanceChart").getContext("2d");
+        var humidityChartCtx = document.getElementById("humidityChart").getContext("2d");
+
+        let distanceChart = new Chart(distanceChartCtx, {
             type: "line",
-            data: { labels: [], datasets: [{ label: "Oxygen Level", borderColor: "#00FFFF", data: [] }] },
-            options: { responsive: true, scales: { y: { min: 10, max: 30 } } }
+            data: { labels: [], datasets: [{ label: "Distance (cm)", borderColor: "#00FFFF", data: [] }] },
+            options: { responsive: true, scales: { y: { min: 0, max: 300 } } }
         });
 
-        accelChart = new Chart(accelChartCtx, {
+        let humidityChart = new Chart(humidityChartCtx, {
             type: "line",
-            data: { labels: [], datasets: [
-                { label: "X-axis", borderColor: "red", data: [] },
-                { label: "Y-axis", borderColor: "green", data: [] },
-                { label: "Z-axis", borderColor: "blue", data: [] }
-            ] },
-            options: { responsive: true, scales: { y: { min: -10, max: 10 } } }
+            data: { labels: [], datasets: [{ label: "Humidity (%)", borderColor: "green", data: [] }] },
+            options: { responsive: true, scales: { y: { min: 0, max: 100 } } }
         });
-		
-		
-        
+
         function updateData() {
             fetch("/data")
                 .then(response => response.json())
                 .then(data => {
+                    console.log("Received Data:", data);
+
+                    // Update Gauges
                     tempGauge.set(data.temperature);
                     flameGauge.set(data.flame);
-                });
+
+                    // Update Distance Chart
+                    let now = new Date().toLocaleTimeString();
+                    distanceChart.data.labels.push(now);
+                    distanceChart.data.datasets[0].data.push(data.distance);
+                    if (distanceChart.data.labels.length > 10) {
+                        distanceChart.data.labels.shift();
+                        distanceChart.data.datasets[0].data.shift();
+                    }
+                    distanceChart.update();
+
+                    // Update Humidity Chart
+                    humidityChart.data.labels.push(now);
+                    humidityChart.data.datasets[0].data.push(data.humidity);
+                    if (humidityChart.data.labels.length > 10) {
+                        humidityChart.data.labels.shift();
+                        humidityChart.data.datasets[0].data.shift();
+                    }
+                    humidityChart.update();
+                })
+                .catch(error => console.error("Error fetching data:", error));
         }
+
+        // Refresh Data Every 2 Seconds
         setInterval(updateData, 2000);
     </script>
 </body>
