@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
+    <style>
+        body {
+            background-color: #000016;
+            color: #00FFFF;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 50px;
+        }
+        .gauge-container, .chart-container {
+            width: 400px;
+            margin: 40px;
+        }
+		
+		 .canvas {
+            background-color: #111;
+            border-radius: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Sensor Dashboard</h1>
+    <div class="container">
+        <div class="gauge-container">
+            <canvas id="tempGauge"></canvas>
+            <p>Temperature (°C)</p>
+        </div>
+        <div class="gauge-container">
+            <canvas id="flameGauge"></canvas>
+            <p>Flame Sensor</p>
+        </div>
+    </div>
+	
+	
+	    <div class="container">
+        <div>
+            <h3>Oxygen Level (%)</h3>
+            <canvas id="oxygenChart" width="600" height="200"></canvas>
+        </div>
+        <div>
+            <h3>Accelerometer (X, Y, Z)</h3>
+            <canvas id="accelChart" width="600" height="200"></canvas>
+        </div>
+    </div>
+	
+	
+	
+	
+	
+    <script>
+	
+	    var oxygenChartCtx = document.getElementById("oxygenChart").getContext("2d");
+        var accelChartCtx = document.getElementById("accelChart").getContext("2d");
+
+        function createGauge(canvasId, min, max) {
+            let gauge = new Gauge(document.getElementById(canvasId)).setOptions({
+                angle: 0.15,
+                lineWidth: 0.3,
+                radiusScale: 1,
+                pointer: { length: 0.6, strokeWidth: 0.03, color: '#00FFFF' },
+                limitMax: false,
+                colorStart: '#0000FF',
+                colorStop: '#00FFFF',
+                strokeColor: '#808080',
+                generateGradient: true
+            });
+            gauge.maxValue = max;
+            gauge.setMinValue(min);
+            gauge.animationSpeed = 32;
+            return gauge;
+        }
+
+        let tempGauge = createGauge("tempGauge", 20, 40);
+        let flameGauge = createGauge("flameGauge", 0, 1);
+		
+		
+		oxygenChart = new Chart(oxygenChartCtx, {
+            type: "line",
+            data: { labels: [], datasets: [{ label: "Oxygen Level", borderColor: "#00FFFF", data: [] }] },
+            options: { responsive: true, scales: { y: { min: 10, max: 30 } } }
+        });
+
+        accelChart = new Chart(accelChartCtx, {
+            type: "line",
+            data: { labels: [], datasets: [
+                { label: "X-axis", borderColor: "red", data: [] },
+                { label: "Y-axis", borderColor: "green", data: [] },
+                { label: "Z-axis", borderColor: "blue", data: [] }
+            ] },
+            options: { responsive: true, scales: { y: { min: -10, max: 10 } } }
+        });
+		
+		
+        
+        function updateData() {
+            fetch("/data")
+                .then(response => response.json())
+                .then(data => {
+                    tempGauge.set(data.temperature);
+                    flameGauge.set(data.flame);
+                });
+        }
+        setInterval(updateData, 2000);
+    </script>
+</body>
+</html>
